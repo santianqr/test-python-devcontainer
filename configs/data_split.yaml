@@ -1,0 +1,23 @@
+data_split:
+  cutoff_date: "2025-01-31"
+  max_data_date: "2025-05-31"
+
+features:
+  columns_to_drop:
+    - "numero"
+    - "retailer_id"
+    - "datetime_a"
+    - "churn"
+    - "auth_crncy_cde"
+    - "retl_sic_cde.descripcion"
+    - "retl_sic_cde.familia"
+    - "retl_sic_cde.mcc"
+    - "apprv_cde"
+
+  aggregations:
+    amt_1: "sum"
+    amt_2: "sum"
+    transaction_count: "sum"
+
+  transformations:
+    amt_scale_factor: 100

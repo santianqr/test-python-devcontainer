@@ -1,3 +1,5 @@
 .cursor/
 .venv/
-uv.lock
+.mypy_cache/
+data/
+catboost_info/
