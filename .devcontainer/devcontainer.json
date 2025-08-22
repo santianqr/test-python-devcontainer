@@ -1,11 +1,18 @@
 {
   "name": "Python + Git",
   "image": "mcr.microsoft.com/devcontainers/python:3.11",
-  "remoteUser": "vscode",
+  "forwardPorts": [
+    8000
+  ],
+  "portsAttributes": {
+    "8000": {
+      "label": "FastAPI",
+      "onAutoForward": "notify"
+    }
+  },
   "settings": {
     "[python]": {
       "editor.defaultFormatter": "ms-python.black-formatter",
-      "editor.formatOnSave": true,
       "editor.codeActionsOnSave": {
         "source.fixAll.ruff": "explicit",
         "source.organizeImports.ruff": "explicit"
@@ -22,8 +29,10 @@
         "ms-python.black-formatter",
         "ms-python.mypy-type-checker",
         "eamodio.gitlens",
-        "usernamehw.errorlens"
+        "usernamehw.errorlens",
+        "rangav.vscode-thunder-client"
       ]
     }
-  }
+  },
+  "postCreateCommand": "curl -LsSf https://astral.sh/uv/install.sh | sh && export PATH=\"$HOME/.cargo/bin:$PATH\" && uv sync --extra dev --extra ds"
 }

@@ -3,3 +3,5 @@
 .mypy_cache/
 data/
 catboost_info/
+.ruff_cache/
+__pycache__/
