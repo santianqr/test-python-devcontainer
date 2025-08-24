@@ -5,3 +5,7 @@ data/
 catboost_info/
 .ruff_cache/
 __pycache__/
+.env
+
+# uv.lock should be committed to version control
+# It ensures reproducible builds across environments
