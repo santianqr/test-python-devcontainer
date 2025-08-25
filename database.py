@@ -37,19 +37,17 @@ class BusinessKnowledge(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     content = Column(Text, nullable=False)
-    embedding = Column(Vector(1536), nullable=True)  # OpenAI embedding dimension
+    embedding: Vector = Column(Vector(1536), nullable=True)
     meta_data = Column(JSONB)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
 def get_database_url() -> str:
     """Get database URL from environment variables."""
-    # Try DATABASE_URL first (most convenient)
     database_url = os.getenv("DATABASE_URL")
     if database_url:
         return database_url
 
-    # Try individual components (legacy support)
     user = os.getenv("DB_USER") or os.getenv("user")
     password = os.getenv("DB_PASSWORD") or os.getenv("password")
     host = os.getenv("DB_HOST") or os.getenv("host")
@@ -59,7 +57,6 @@ def get_database_url() -> str:
     if all([user, password, host, port, dbname]):
         return f"postgresql://{user}:{password}@{host}:{port}/{dbname}"
 
-    # Default for local development
     return "postgresql://postgres:postgres123@postgres:5432/whatsapp_ai"
 
 

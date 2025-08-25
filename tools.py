@@ -1,6 +1,7 @@
 """Tools for the WhatsApp AI Agent."""
 
 from datetime import datetime, timedelta
+from typing import Any
 
 from langchain.tools import tool
 
@@ -17,7 +18,7 @@ def check_property_availability(property_id: str, check_in: str, check_out: str)
     Returns:
         Availability status and pricing information
     """
-    dummy_properties = {
+    dummy_properties: dict[str, dict[str, Any]] = {
         "miami_beach_01": {
             "name": "Ocean View Apartment - Miami Beach",
             "base_price": 150,
@@ -54,13 +55,13 @@ def check_property_availability(property_id: str, check_in: str, check_out: str)
 
         while current_date < check_out_date:
             date_str = current_date.strftime("%Y-%m-%d")
-            available_dates: list[str] = property_info["available_dates"]
+            available_dates = property_info["available_dates"]
             if date_str in available_dates:
                 available_nights.append(date_str)
             current_date += timedelta(days=1)
 
         if len(available_nights) == nights:
-            base_price: int = property_info["base_price"]
+            base_price = int(property_info["base_price"])
             total_price = nights * base_price
             return f"""✅ AVAILABLE: {property_info['name']}
 📅 Dates: {check_in} to {check_out} ({nights} nights)
@@ -88,7 +89,7 @@ def get_property_details(property_id: str) -> str:
     Returns:
         Detailed property information
     """
-    dummy_properties = {
+    dummy_properties: dict[str, dict[str, Any]] = {
         "miami_beach_01": {
             "name": "Ocean View Apartment - Miami Beach",
             "description": "Stunning 2BR/2BA apartment with direct ocean views",
@@ -126,6 +127,7 @@ def get_property_details(property_id: str) -> str:
         return f"Property {property_id} not found. Available properties: {available_props}"
 
     prop = dummy_properties[property_id]
+    amenities_list = list(prop["amenities"])
     return f"""🏠 {prop['name']}
 📍 Location: {prop['location']}
 👥 Capacity: {prop['capacity']}
@@ -134,7 +136,7 @@ def get_property_details(property_id: str) -> str:
 📝 Description: {prop['description']}
 
 🎯 Amenities:
-{chr(10).join(f"• {amenity}" for amenity in prop['amenities'])}
+{chr(10).join(f"• {amenity}" for amenity in amenities_list)}
 
 ⏰ Check-in: {prop['check_in']}
 ⏰ Check-out: {prop['check_out']}"""

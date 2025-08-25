@@ -104,7 +104,7 @@ async def root() -> dict[str, str]:
         "message": "WhatsApp AI Agent API",
         "status": "active",
         "version": "2.0.0",
-        "features": ["memory", "vector_store", "tools"],
+        "features": "memory, vector_store, tools",
         "endpoints": "/chat, /health, /db-status",
     }
 
