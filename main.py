@@ -11,6 +11,7 @@ from langchain_openai import ChatOpenAI
 from pydantic import BaseModel
 
 from database import init_database, test_connection
+from gpt5_nano_agent import GPT5NanoAgent
 from memory import ConversationMemory
 from tools import check_property_availability, get_property_details, list_available_properties
 from vector_store import BusinessKnowledgeStore
@@ -48,8 +49,8 @@ def get_llm():
     if not api_key:
         raise ValueError("OPENAI_API_KEY environment variable is required")
 
-    model = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
-    return ChatOpenAI(openai_api_key=api_key, model=model, temperature=0.7)
+    model = os.getenv("OPENAI_MODEL", "gpt-4o")
+    return ChatOpenAI(openai_api_key=api_key, model=model, temperature=0.1)
 
 
 def create_agent() -> AgentExecutor:
@@ -68,18 +69,17 @@ def create_agent() -> AgentExecutor:
                 "system",
                 """You are a helpful WhatsApp assistant for an Airbnb property management company in Miami.
 
-You have access to:
-- Property availability checking tools
-- Business knowledge about our properties and policies
-- Conversation history for context
+You MUST use the provided tools to answer questions about properties:
+- check_property_availability: Check if a property is available for specific dates
+- get_property_details: Get detailed information about a property  
+- list_available_properties: List all available properties
 
 Guidelines:
+- ALWAYS use tools when users ask about properties, availability, or details
 - Be friendly and conversational, like a WhatsApp chat
 - Keep responses concise but informative
-- Use tools when users ask about properties, availability, or details
-- Reference previous conversation when relevant
 - Use emojis appropriately for WhatsApp style
-- Always provide helpful and accurate information
+- Do not make up property information - use the tools
 
 Business Context:
 {business_context}
@@ -94,7 +94,7 @@ Conversation History:
     )
 
     agent = create_openai_functions_agent(llm, tools, prompt)
-    return AgentExecutor(agent=agent, tools=tools, verbose=True)
+    return AgentExecutor(agent=agent, tools=tools, verbose=True, return_intermediate_steps=True)
 
 
 @app.get("/")
@@ -138,32 +138,46 @@ async def chat_with_agent(message: ChatMessage) -> AgentResponse:
     try:
         memory = ConversationMemory(message.chat_id)
         knowledge_store = BusinessKnowledgeStore()
-        agent_executor = create_agent()
 
         conversation_history = memory.build_conversation_context(limit=5)
-
         relevant_knowledge = knowledge_store.search_knowledge(message.message, limit=3)
         business_context = "\n".join([item["content"] for item in relevant_knowledge])
 
-        agent_input = {
-            "input": message.message,
-            "business_context": business_context,
-            "conversation_history": conversation_history,
-            "chat_history": [],
-        }
+        model_name = os.getenv("OPENAI_MODEL", "gpt-4o")
 
-        result = agent_executor.invoke(agent_input)
+        if model_name == "gpt-5-nano":
+            gpt5_agent = GPT5NanoAgent()
+            result = gpt5_agent.process_message(
+                message.message, business_context=business_context, conversation_history=conversation_history
+            )
+            response_text = result["response"]
+            tools_used = result["tools_used"]
+        else:
+            agent_executor = create_agent()
 
-        response_text = result["output"]
-        intermediate_steps = result.get("intermediate_steps", [])
-        tools_used = [str(action.tool) if hasattr(action, "tool") else str(action) for action in intermediate_steps]
+            agent_input = {
+                "input": message.message,
+                "business_context": business_context,
+                "conversation_history": conversation_history,
+                "chat_history": [],
+            }
+
+            result = agent_executor.invoke(agent_input)
+            response_text = result["output"]
+            intermediate_steps = result.get("intermediate_steps", [])
+            tools_used = []
+            for step in intermediate_steps:
+                if len(step) >= 1 and hasattr(step[0], "tool"):
+                    tools_used.append(step[0].tool)
+                elif len(step) >= 1 and hasattr(step[0], "name"):
+                    tools_used.append(step[0].name)
 
         memory.add_message(message.message, response_text)
 
         return AgentResponse(
             response=response_text,
             chat_id=message.chat_id,
-            model_used=os.getenv("OPENAI_MODEL", "gpt-3.5-turbo"),
+            model_used=model_name,
             tools_used=tools_used,
             success=True,
         )

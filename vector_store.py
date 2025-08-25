@@ -48,7 +48,7 @@ class BusinessKnowledgeStore:
                 {
                     "content": result.content,
                     "metadata": result.meta_data,
-                    "similarity": 1.0,  # Placeholder for actual similarity score
+                    "similarity": 1.0,
                 }
                 for result in results
             ]

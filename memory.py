@@ -44,7 +44,7 @@ class ConversationMemory:
                     "assistant_response": conv.assistant_response,
                     "timestamp": conv.timestamp.isoformat(),
                 }
-                for conv in reversed(conversations)  # Reverse to get chronological order
+                for conv in reversed(conversations)
             ]
         finally:
             session.close()

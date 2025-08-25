@@ -62,11 +62,9 @@ def verify_data() -> bool:
 
         from sqlalchemy import text
 
-        # Check conversations table
         conv_count = session.execute(text("SELECT COUNT(*) FROM conversations")).fetchone()[0]
         print(f"📊 Conversations: {conv_count} records")
 
-        # Check business_knowledge table
         bk_count = session.execute(text("SELECT COUNT(*) FROM business_knowledge")).fetchone()[0]
         print(f"📊 Business knowledge: {bk_count} records")
 
