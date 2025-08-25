@@ -76,11 +76,11 @@ async def chat_with_ai(message: WhatsAppMessage) -> AIResponse:
     try:
         llm = get_llm()
 
-        system_context = """Eres un asistente de WhatsApp amigable y útil. 
-        Responde de manera concisa y natural, como si fueras un amigo respondiendo un mensaje.
-        Mantén tus respuestas cortas y conversacionales, apropiadas para WhatsApp."""
+        system_context = """You are a friendly and helpful WhatsApp assistant. 
+        Respond in a concise and natural way, as if you were a friend replying to a message.
+        Keep your responses short and conversational, appropriate for WhatsApp."""
 
-        full_prompt = f"{system_context}\n\nUsuario: {message.message}"
+        full_prompt = f"{system_context}\n\nUser: {message.message}"
         human_message = HumanMessage(content=full_prompt)
         response = llm.invoke([human_message])
 
@@ -98,7 +98,7 @@ async def test_endpoint() -> dict[str, Any]:
     return {
         "message": "API is working!",
         "test_chat_endpoint": "/chat",
-        "sample_request": {"message": "Hola, ¿cómo estás?", "sender": "user"},
+        "sample_request": {"message": "Hello, how are you?", "sender": "user"},
     }
 
 
