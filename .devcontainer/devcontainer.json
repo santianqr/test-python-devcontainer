@@ -36,5 +36,5 @@
       ]
     }
   },
-  "postCreateCommand": "curl -LsSf https://astral.sh/uv/install.sh | sh && export PATH=\"$HOME/.cargo/bin:$PATH\" && uv sync --extra dev --extra ds && echo '✅ DevContainer ready! Run: uv run python init_complete.py'"
+  "postCreateCommand": "curl -LsSf https://astral.sh/uv/install.sh | sh && export PATH=\"$HOME/.cargo/bin:$PATH\" && uv sync --extra dev --extra ds"
 }
