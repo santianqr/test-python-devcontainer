@@ -3,7 +3,7 @@
 import os
 from typing import Any
 
-from langchain.embeddings import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from sqlalchemy import text
 
 from database import BusinessKnowledge, get_database_url, get_session

@@ -5,7 +5,7 @@ from datetime import datetime
 
 from dotenv import load_dotenv
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import Column, DateTime, Integer, String, Text, create_engine
+from sqlalchemy import Column, DateTime, Integer, String, Text, create_engine, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
@@ -93,7 +93,7 @@ def test_connection() -> dict[str, str]:
     try:
         engine = create_database_engine()
         with engine.connect() as connection:
-            result = connection.execute("SELECT NOW();")
+            result = connection.execute(text("SELECT NOW();"))
             current_time = result.fetchone()[0]
             return {
                 "status": "connected",
