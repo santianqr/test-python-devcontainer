@@ -1,6 +1,8 @@
 {
-  "name": "Python + Git",
-  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  "name": "Python + PostgreSQL",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspaces/linux_env",
   "forwardPorts": [
     8000
   ],
@@ -34,5 +36,5 @@
       ]
     }
   },
-  "postCreateCommand": "curl -LsSf https://astral.sh/uv/install.sh | sh && export PATH=\"$HOME/.cargo/bin:$PATH\" && uv sync --extra dev --extra ds"
+  "postCreateCommand": "curl -LsSf https://astral.sh/uv/install.sh | sh && export PATH=\"$HOME/.cargo/bin:$PATH\" && uv sync --extra dev --extra ds && echo '✅ DevContainer ready! Run: uv run python init_complete.py'"
 }

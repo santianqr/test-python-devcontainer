@@ -1,45 +1,60 @@
 # WhatsApp AI Assistant
 
-Una aplicación FastAPI simple que usa LangChain con OpenAI para responder mensajes de WhatsApp.
+Una aplicación FastAPI avanzada que usa LangChain con OpenAI para responder mensajes de WhatsApp con memoria conversacional y base de conocimientos vectorial.
 
 ## Características
 
 - ✅ **FastAPI** para la API REST
 - ✅ **LangChain** para integración con OpenAI  
-- ✅ **Respuestas optimizadas** para WhatsApp (cortas y conversacionales)
-- ✅ **Configuración simple** con variables de entorno
+- ✅ **PostgreSQL + pgvector** para persistencia y búsqueda vectorial
+- ✅ **Memoria conversacional** persistente por chat
+- ✅ **Base de conocimientos** con embeddings para RAG
+- ✅ **Herramientas personalizadas** para gestión de propiedades
+- ✅ **Configuración automática** con scripts de inicialización
+- ✅ **DevContainer** con PostgreSQL incluido
 - ✅ **Código limpio** siguiendo estándares Python 3.11+ (ruff, mypy, black)
 - ✅ **Gestión de dependencias** con uv
 
 ## Requisitos
 
-- Python 3.11+
+- Docker (para devcontainer)
 - OpenAI API Key
-- uv (gestor de paquetes)
+- uv (gestor de paquetes) - se instala automáticamente
 
 ## Instalación
 
-1. **Instala las dependencias con uv:**
-```bash
-uv sync --extra dev --extra ds
-```
+### Opción 1: DevContainer (Recomendado)
 
-2. **Configura las variables de entorno:**
+1. **Abre el proyecto en VS Code** y acepta abrir en DevContainer
+2. **Configura tu entorno:**
 ```bash
-# Opción 1: Usar el script interactivo (RECOMENDADO)
-uv run python setup_env.py
-
-# Opción 2: Crear manualmente el archivo .env
-cp env_example .env
-# Luego edita .env con tus credenciales reales
-```
-
-3. **Inicializa la base de datos:**
-```bash
-# Configuración completa automática
+# Configuración automática completa
 uv run python init_complete.py
 
 # O paso a paso:
+uv run python setup_env.py  # Configurar .env
+uv run python init_db.py    # Inicializar base de datos
+```
+
+### Opción 2: Instalación Local
+
+1. **Instala PostgreSQL** con extensión pgvector
+2. **Instala las dependencias:**
+```bash
+uv sync --extra dev --extra ds
+```
+3. **Configura PostgreSQL:**
+```sql
+CREATE DATABASE whatsapp_ai;
+CREATE EXTENSION vector;
+```
+4. **Configura variables de entorno:**
+```bash
+cp env_example .env
+# Edita .env con tu configuración de PostgreSQL y OpenAI API key
+```
+5. **Inicializa la base de datos:**
+```bash
 uv run python init_db.py
 ```
 
@@ -102,21 +117,65 @@ Verifica el estado de la aplicación y la conexión con OpenAI.
 ### 🧪 GET `/test`
 Endpoint simple para probar que la API funciona.
 
-**Response:**
-```json
-{
-  "message": "API is working!",
-  "test_chat_endpoint": "/chat",
-  "sample_request": {
-    "message": "Hola, ¿cómo estás?",
-    "sender": "user"
-  }
-}
+## Arquitectura
+
+### Base de Datos
+- **PostgreSQL 15** con extensión **pgvector**
+- **Tablas principales:**
+  - `conversations`: Historial de conversaciones por chat
+  - `business_knowledge`: Base de conocimientos con embeddings vectoriales
+
+### Funcionalidades Avanzadas
+- **🧠 Memoria Conversacional**: Cada chat mantiene su propio historial
+- **🔍 RAG (Retrieval Augmented Generation)**: Búsqueda semántica en base de conocimientos
+- **🛠️ Herramientas Personalizadas**: Sistema extensible de tools para LangChain
+- **📊 Embeddings**: Vectorización automática con OpenAI embeddings
+
+### DevContainer
+- **PostgreSQL** pre-configurado y listo para usar
+- **Scripts de inicialización** automática
+- **Extensiones VS Code** optimizadas para el desarrollo
+
+## Scripts Disponibles
+
+### `setup_env.py`
+Configuración interactiva del entorno (.env y OpenAI API key)
+
+### `init_db.py`
+Inicialización completa de la base de datos con:
+- Verificación de conectividad a PostgreSQL
+- Creación de tablas y extensiones
+- Configuración de índices vectoriales
+- Datos de ejemplo
+
+### `init_complete.py`
+Configuración completa automática (setup_env + init_db)
+
+## Desarrollo
+
+### Estructura del Proyecto
+```
+├── .devcontainer/          # Configuración DevContainer
+│   ├── devcontainer.json   # Configuración VS Code
+│   ├── docker-compose.yml  # PostgreSQL + App
+│   └── init-scripts/       # Scripts SQL de inicialización
+├── database.py             # Modelos SQLAlchemy
+├── vector_store.py         # Gestión de embeddings
+├── memory.py               # Memoria conversacional
+├── tools.py                # Herramientas personalizadas
+├── main.py                 # Aplicación FastAPI
+└── init_*.py              # Scripts de configuración
 ```
 
-## Pruebas
+## Verificación
 
-### Con curl:
+### Comprobar PostgreSQL
+```bash
+# Verificar conexión a la base de datos
+uv run python -c "from database import test_connection; print(test_connection())"
+```
+
+### Probar la API
 ```bash
 # Prueba básica
 curl http://localhost:8000/test
@@ -130,54 +189,45 @@ curl -X POST "http://localhost:8000/chat" \
   -d '{"message": "Hola, ¿cómo estás?", "sender": "user"}'
 ```
 
-### Con Postman:
-1. **URL base:** `http://localhost:8000`
-2. **Método:** `POST` para `/chat`
-3. **Headers:** `Content-Type: application/json`
-4. **Body:** JSON con `message` y `sender`
+## Solución de Problemas
 
-## Verificación de la Base de Datos
-
-### Comprobar tablas y embeddings:
+### PostgreSQL no se conecta
 ```bash
-# Verificar estado completo de la BD
-uv run python check_db.py
+# Verificar que PostgreSQL esté corriendo
+docker ps
 
-# Configurar variables de entorno
-uv run python setup_env.py
+# Reiniciar devcontainer si es necesario
+# En VS Code: Ctrl+Shift+P → "Rebuild Container"
+```
 
-# Inicialización completa
-uv run python init_complete.py
+### Error con pgvector
+```bash
+# El script de inicialización instala pgvector automáticamente
+# Si hay problemas, verificar los logs:
+docker logs <postgres_container_id>
+```
+
+### Error con OpenAI API
+```bash
+# Verificar que la API key esté configurada
+grep OPENAI_API_KEY .env
+
+# Probar conexión:
+uv run python -c "import openai; print('OpenAI OK')"
 ```
 
 ## Desarrollo
 
-### Herramientas de calidad de código:
+### Herramientas de calidad:
 ```bash
-# Linting
+# Linting y formateo
 uv run ruff check .
-
-# Type checking  
-uv run mypy .
-
-# Formateo
 uv run black .
+uv run mypy .
 ```
 
-### Estructura del proyecto:
-```
-├── main.py           # Aplicación FastAPI principal
-├── pyproject.toml    # Configuración del proyecto y dependencias
-├── uv.lock          # Lock file de dependencias (versionado)
-├── .env             # Variables de entorno (no versionado)
-├── env_example      # Ejemplo de configuración
-└── README.md        # Este archivo
-```
-
-## Configuración
-
-El proyecto sigue las mejores prácticas de Python:
-- **Tipos modernos**: `dict[str, str]` en lugar de `Dict[str, str]`
-- **Imports organizados**: stdlib → third-party → local
-- **Sin comentarios `#`**: Solo docstrings para documentación
-- **Configuración en pyproject.toml**: ruff, mypy, black configurados
+### Variables de entorno importantes:
+- `DATABASE_URL`: Conexión a PostgreSQL
+- `OPENAI_API_KEY`: Clave API de OpenAI
+- `OPENAI_MODEL`: Modelo de chat (default: gpt-3.5-turbo)
+- `OPENAI_EMBEDDING_MODEL`: Modelo de embeddings (default: text-embedding-3-small)
