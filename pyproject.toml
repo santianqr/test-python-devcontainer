@@ -17,6 +17,9 @@ dependencies = [
   "langchain>=0.1.0",
   "langchain-openai>=0.1.0",
   "python-dotenv>=1.0.0",
+  "pgvector>=0.3.6",
+  "langchain-postgres>=0.0.15",
+  "langchain-community>=0.3.21",
 ]
 
 [project.optional-dependencies]

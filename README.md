@@ -24,14 +24,23 @@ Una aplicación FastAPI simple que usa LangChain con OpenAI para responder mensa
 uv sync --extra dev --extra ds
 ```
 
-2. **Configura tu API key de OpenAI:**
+2. **Configura las variables de entorno:**
 ```bash
-# Crea un archivo .env basado en el ejemplo
-cp env_example .env
+# Opción 1: Usar el script interactivo (RECOMENDADO)
+uv run python setup_env.py
 
-# Edita .env y agrega tu API key real
-OPENAI_API_KEY=tu_api_key_aqui
-OPENAI_MODEL=gpt-3.5-turbo
+# Opción 2: Crear manualmente el archivo .env
+cp env_example .env
+# Luego edita .env con tus credenciales reales
+```
+
+3. **Inicializa la base de datos:**
+```bash
+# Configuración completa automática
+uv run python init_complete.py
+
+# O paso a paso:
+uv run python init_db.py
 ```
 
 ## Uso
@@ -127,18 +136,32 @@ curl -X POST "http://localhost:8000/chat" \
 3. **Headers:** `Content-Type: application/json`
 4. **Body:** JSON con `message` y `sender`
 
+## Verificación de la Base de Datos
+
+### Comprobar tablas y embeddings:
+```bash
+# Verificar estado completo de la BD
+uv run python check_db.py
+
+# Configurar variables de entorno
+uv run python setup_env.py
+
+# Inicialización completa
+uv run python init_complete.py
+```
+
 ## Desarrollo
 
 ### Herramientas de calidad de código:
 ```bash
 # Linting
-uv run ruff check main.py
+uv run ruff check .
 
 # Type checking  
-uv run mypy main.py
+uv run mypy .
 
 # Formateo
-uv run black main.py
+uv run black .
 ```
 
 ### Estructura del proyecto:
