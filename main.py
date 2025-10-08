@@ -4,11 +4,12 @@ import os
 from typing import Any
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Form, HTTPException, Response
 from langchain.agents import AgentExecutor, create_openai_functions_agent
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel
+from twilio.twiml.messaging_response import MessagingResponse
 
 from database import init_database, test_connection
 from gpt5_nano_agent import GPT5NanoAgent
@@ -104,8 +105,8 @@ async def root() -> dict[str, str]:
         "message": "WhatsApp AI Agent API",
         "status": "active",
         "version": "2.0.0",
-        "features": "memory, vector_store, tools",
-        "endpoints": "/chat, /health, /db-status",
+        "features": "memory, vector_store, tools, twilio_webhook",
+        "endpoints": "/chat, /health, /db-status, /webhook/twilio",
     }
 
 
@@ -136,8 +137,8 @@ async def chat_with_agent(message: ChatMessage) -> AgentResponse:
         AgentResponse with the agent's response and metadata
     """
     try:
-        memory = ConversationMemory(message.chat_id)
-        knowledge_store = BusinessKnowledgeStore()
+        memory: ConversationMemory = ConversationMemory(message.chat_id)
+        knowledge_store: BusinessKnowledgeStore = BusinessKnowledgeStore()
 
         conversation_history = memory.build_conversation_context(limit=5)
         relevant_knowledge = knowledge_store.search_knowledge(message.message, limit=3)
@@ -235,6 +236,70 @@ async def test_endpoint() -> dict[str, Any]:
             "tools: ✅ Property availability checking"
         ),
     }
+
+
+@app.post("/webhook/twilio")
+async def twilio_webhook(
+    From: str = Form(...),
+    Body: str = Form(...),
+    MessageSid: str = Form(...),
+    ProfileName: str = Form(None),
+) -> Response:
+    """Twilio WhatsApp webhook endpoint.
+
+    Receives incoming WhatsApp messages from Twilio and responds with AI agent.
+
+    Args:
+        From: Sender's WhatsApp number (e.g., whatsapp:+1234567890)
+        Body: Message text content
+        MessageSid: Unique message identifier from Twilio
+        ProfileName: Sender's WhatsApp profile name (optional)
+
+    Returns:
+        TwiML response to send back via WhatsApp
+    """
+    try:
+        chat_id = From.replace("whatsapp:", "").replace("+", "").strip()
+
+        memory = ConversationMemory(chat_id)
+        knowledge_store = BusinessKnowledgeStore()
+
+        conversation_history = memory.build_conversation_context(limit=5)
+        relevant_knowledge = knowledge_store.search_knowledge(Body, limit=3)
+        business_context = "\n".join([item["content"] for item in relevant_knowledge])
+
+        model_name = os.getenv("OPENAI_MODEL", "gpt-4o")
+
+        if model_name == "gpt-5-nano":
+            gpt5_agent = GPT5NanoAgent()
+            result = gpt5_agent.process_message(
+                Body, business_context=business_context, conversation_history=conversation_history
+            )
+            response_text = result["response"]
+        else:
+            agent_executor = create_agent()
+
+            agent_input = {
+                "input": Body,
+                "business_context": business_context,
+                "conversation_history": conversation_history,
+                "chat_history": [],
+            }
+
+            result = agent_executor.invoke(agent_input)
+            response_text = result["output"]
+
+        memory.add_message(Body, response_text)
+
+        twiml_response = MessagingResponse()
+        twiml_response.message(response_text)
+
+        return Response(content=str(twiml_response), media_type="application/xml")
+
+    except Exception:
+        error_response = MessagingResponse()
+        error_response.message("Lo siento, ocurrió un error al procesar tu mensaje. Por favor intenta de nuevo.")
+        return Response(content=str(error_response), media_type="application/xml")
 
 
 if __name__ == "__main__":
